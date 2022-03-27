@@ -50,9 +50,10 @@ func UpdateRecipeHandler(c *gin.Context) {
 	}
 
 	index := -1
-	for i, _ := range recipes {
+	for i := 0; i < len(recipes); i++ {
 		if recipes[i].ID == id {
 			index = i
+			break
 		}
 	}
 
