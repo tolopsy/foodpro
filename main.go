@@ -32,11 +32,39 @@ func CreateNewRecipeHandler(c *gin.Context) {
 	recipe.ID = xid.New().String()
 	recipe.PublishedAt = time.Now()
 	recipes = append(recipes, recipe)
-	c.JSON(http.StatusOK, recipe)
+	c.JSON(http.StatusCreated, recipe)
 }
 
 func FetchAllRecipesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, recipes)
+}
+
+func UpdateRecipeHandler(c *gin.Context) {
+	id := c.Param("id")
+	var recipe Recipe
+	if err := c.ShouldBindJSON(&recipe); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Error while parsing recipe to update: " + err.Error(),
+		})
+		return
+	}
+
+	index := -1
+	for i, _ := range recipes {
+		if recipes[i].ID == id {
+			index = i
+		}
+	}
+
+	if index == -1 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Recipe not found",
+		})
+		return
+	}
+
+	recipes[index] = recipe
+	c.JSON(http.StatusOK, recipes[index])
 }
 
 func init() {
@@ -49,5 +77,6 @@ func main() {
 	engine := gin.Default()
 	engine.POST("/recipes", CreateNewRecipeHandler)
 	engine.GET("/recipes", FetchAllRecipesHandler)
+	engine.PUT("/recipes/:id", UpdateRecipeHandler)
 	engine.Run()
 }
