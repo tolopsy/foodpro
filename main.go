@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -92,6 +93,26 @@ func DeleteRecipeHandler(c *gin.Context) {
 	})
 }
 
+func SearchRecipesHandler(c *gin.Context) {
+	tag := c.Query("tag")
+	recipeListSearch := make([]Recipe, 0)
+
+	for i := 0; i < len(recipes); i++ {
+		found := false
+		for _, recipeTag := range recipes[i].Tags {
+			if strings.EqualFold(recipeTag, tag) {
+				found = true
+			}
+		}
+
+		if found {
+			recipeListSearch = append(recipeListSearch, recipes[i])
+		}
+	}
+
+	c.JSON(http.StatusOK, recipeListSearch)
+}
+
 func init() {
 	recipes = make([]Recipe, 0)
 	file, _ := ioutil.ReadFile("recipes.json")
@@ -102,6 +123,7 @@ func main() {
 	engine := gin.Default()
 	engine.POST("/recipes", CreateNewRecipeHandler)
 	engine.GET("/recipes", FetchAllRecipesHandler)
+	engine.GET("/recipes/search", SearchRecipesHandler)
 	engine.PUT("/recipes/:id", UpdateRecipeHandler)
 	engine.DELETE("/recipes/:id", DeleteRecipeHandler)
 	engine.Run()
