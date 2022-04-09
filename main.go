@@ -124,7 +124,7 @@ var ctx context.Context
 var client *mongo.Client
 
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	client, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatal(err)
