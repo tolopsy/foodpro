@@ -122,6 +122,26 @@ func SearchRecipesHandler(c *gin.Context) {
 var err error
 var ctx context.Context
 var client *mongo.Client
+var loadInitialData bool = false
+
+
+func loadRecipesIntoDb() {
+	recipes = make([]Recipe, 0)
+	file, _ := ioutil.ReadFile("recipes.json")
+	_ = json.Unmarshal(file, &recipes)
+
+	var listOfRecipes []interface{}
+	for _, recipe := range recipes {
+		listOfRecipes = append(listOfRecipes, recipe)
+	}
+
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
+	insertManyResult, err := collection.InsertMany(ctx, listOfRecipes)
+	if err != nil {
+		log.Fatal("Error while inserting initial recipes data " + err.Error())
+	}
+	log.Println("Inserted recipes: ", len(insertManyResult.InsertedIDs))
+}
 
 func init() {
 	ctx = context.Background()
@@ -130,9 +150,13 @@ func init() {
 		log.Fatal(err)
 	}
 	log.Println("Connected to MongoDB")
-	recipes = make([]Recipe, 0)
-	file, _ := ioutil.ReadFile("recipes.json")
-	_ = json.Unmarshal(file, &recipes)
+
+	// loads preliminary data into db when we need it.
+	// handy for test situations or when using a new empty db in local.
+	// TODO: use environment variable.
+	if (loadInitialData) {
+		loadRecipesIntoDb()
+	}
 }
 
 func main() {
