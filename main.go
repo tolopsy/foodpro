@@ -15,7 +15,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"gopkg.in/mgo.v2/bson"
 )
+
+var err error
+var ctx context.Context
+var client *mongo.Client
+var loadInitialData bool = false
+var collection *mongo.Collection
 
 type Recipe struct {
 	ID           string    `json:"id"`
@@ -43,6 +50,22 @@ func CreateNewRecipeHandler(c *gin.Context) {
 }
 
 func FetchAllRecipesHandler(c *gin.Context) {
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+	defer cursor.Close(ctx)
+
+	recipes := make([]Recipe, 0)
+	for cursor.Next(ctx) {
+		var recipe Recipe
+		err = cursor.Decode(&recipe)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while decoding recipes from db" + err.Error()})
+		}
+		recipes = append(recipes, recipe)
+	}
+
 	c.JSON(http.StatusOK, recipes)
 }
 
@@ -119,12 +142,6 @@ func SearchRecipesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, recipeListSearch)
 }
 
-var err error
-var ctx context.Context
-var client *mongo.Client
-var loadInitialData bool = false
-
-
 func loadRecipesIntoDb() {
 	recipes = make([]Recipe, 0)
 	file, _ := ioutil.ReadFile("recipes.json")
@@ -135,7 +152,6 @@ func loadRecipesIntoDb() {
 		listOfRecipes = append(listOfRecipes, recipe)
 	}
 
-	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
 	insertManyResult, err := collection.InsertMany(ctx, listOfRecipes)
 	if err != nil {
 		log.Fatal("Error while inserting initial recipes data " + err.Error())
@@ -150,11 +166,12 @@ func init() {
 		log.Fatal(err)
 	}
 	log.Println("Connected to MongoDB")
+	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
 
 	// loads preliminary data into db when we need it.
 	// handy for test situations or when using a new empty db in local.
 	// TODO: use environment variable.
-	if (loadInitialData) {
+	if loadInitialData {
 		loadRecipesIntoDb()
 	}
 }
