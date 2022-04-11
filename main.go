@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/xid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"gopkg.in/mgo.v2/bson"
 )
 
 var err error
@@ -25,12 +25,12 @@ var loadInitialData bool = false
 var collection *mongo.Collection
 
 type Recipe struct {
-	ID           string    `json:"id"`
-	Name         string    `json:"name"`
-	Tags         []string  `json:"tags"`
-	Ingredients  []string  `json:"ingredients"`
-	Instructions []string  `json:"instructions"`
-	PublishedAt  time.Time `json:"publishedAt"`
+	ID           primitive.ObjectID `json:"id" bson:"_id"`
+	Name         string             `json:"name" bson:"name"`
+	Tags         []string           `json:"tags" bson:"tags"`
+	Ingredients  []string           `json:"ingredients" bson:"ingredients"`
+	Instructions []string           `json:"instructions" bson:"instructions"`
+	PublishedAt  time.Time          `json:"publishedAt" bson:"publishedAt"`
 }
 
 var recipes []Recipe
@@ -43,9 +43,13 @@ func CreateNewRecipeHandler(c *gin.Context) {
 		})
 		return
 	}
-	recipe.ID = xid.New().String()
+	recipe.ID = primitive.NewObjectID()
 	recipe.PublishedAt = time.Now()
-	recipes = append(recipes, recipe)
+	_, err = collection.InsertOne(ctx, recipe)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while inserting new recipe: " + err.Error()})
+		return
+	}
 	c.JSON(http.StatusCreated, recipe)
 }
 
@@ -53,6 +57,7 @@ func FetchAllRecipesHandler(c *gin.Context) {
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	defer cursor.Close(ctx)
 
@@ -81,7 +86,7 @@ func UpdateRecipeHandler(c *gin.Context) {
 
 	index := -1
 	for i := 0; i < len(recipes); i++ {
-		if recipes[i].ID == id {
+		if recipes[i].ID.String() == id {
 			index = i
 			break
 		}
@@ -103,7 +108,7 @@ func DeleteRecipeHandler(c *gin.Context) {
 	index := -1
 
 	for i := 0; i < len(recipes); i++ {
-		if recipes[i].ID == id {
+		if recipes[i].ID.String() == id {
 			index = i
 			break
 		}
