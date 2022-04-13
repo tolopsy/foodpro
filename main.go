@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -84,23 +85,24 @@ func UpdateRecipeHandler(c *gin.Context) {
 		return
 	}
 
-	index := -1
-	for i := 0; i < len(recipes); i++ {
-		if recipes[i].ID.String() == id {
-			index = i
-			break
-		}
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Println("Error while obtianing ObjectId from hex string `id`")
 	}
+	filterById := bson.M{"_id": objectId}
+	updateToMake := bson.D{{"$set", bson.D{
+		{"name", recipe.Name},
+		{"instructions", recipe.Instructions},
+		{"ingredients", recipe.Ingredients},
+		{"tags", recipe.Tags},
+	}}}
 
-	if index == -1 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Recipe not found",
-		})
-		return
+	_, err = collection.UpdateOne(ctx, filterById, updateToMake)
+	if err != nil {
+		fmt.Println("Error while updating a recipe: " + err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
-
-	recipes[index] = recipe
-	c.JSON(http.StatusOK, recipes[index])
+	c.JSON(http.StatusOK, gin.H{"message": "Recipe has been updated"})
 }
 
 func DeleteRecipeHandler(c *gin.Context) {
