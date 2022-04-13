@@ -150,7 +150,10 @@ func SearchRecipesHandler(c *gin.Context) {
 func loadRecipesIntoDb() {
 	recipes = make([]Recipe, 0)
 	file, _ := ioutil.ReadFile("recipes.json")
-	_ = json.Unmarshal(file, &recipes)
+	err = json.Unmarshal(file, &recipes)
+	if err != nil {
+		log.Fatal("Error while loading recipes data: " + err.Error())
+	}
 
 	var listOfRecipes []interface{}
 	for _, recipe := range recipes {
@@ -168,7 +171,7 @@ func init() {
 	ctx = context.Background()
 	client, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
 	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal(err)
+		log.Fatal("Error while pinging DB: " + err.Error())
 	}
 	log.Println("Connected to MongoDB")
 	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
