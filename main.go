@@ -3,12 +3,10 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -57,19 +55,16 @@ func CreateNewRecipeHandler(c *gin.Context) {
 func FetchAllRecipesHandler(c *gin.Context) {
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while fetching all recipes" + err.Error()})
 		return
 	}
 	defer cursor.Close(ctx)
 
 	recipes := make([]Recipe, 0)
-	for cursor.Next(ctx) {
-		var recipe Recipe
-		err = cursor.Decode(&recipe)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while decoding recipes from db" + err.Error()})
-		}
-		recipes = append(recipes, recipe)
+	err = cursor.All(ctx, &recipes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while decoding recipes from db: " + err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, recipes)
@@ -87,7 +82,8 @@ func UpdateRecipeHandler(c *gin.Context) {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		log.Println("Error while obtianing ObjectId from hex string `id`")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid ID"})
+		return
 	}
 	filterById := bson.M{"_id": objectId}
 	updateToMake := bson.D{{"$set", bson.D{
@@ -99,54 +95,63 @@ func UpdateRecipeHandler(c *gin.Context) {
 
 	_, err = collection.UpdateOne(ctx, filterById, updateToMake)
 	if err != nil {
-		fmt.Println("Error while updating a recipe: " + err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while updating a recipe: " + err.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Recipe has been updated"})
 }
 
 func DeleteRecipeHandler(c *gin.Context) {
 	id := c.Param("id")
-	index := -1
-
-	for i := 0; i < len(recipes); i++ {
-		if recipes[i].ID.String() == id {
-			index = i
-			break
-		}
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
 	}
+	_, err = collection.DeleteOne(ctx, bson.M{"_id": objectId})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error occured during deletion " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Recipe has been deleted"})
+}
 
-	if index == -1 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Recipe not found",
-		})
+func FetchOneRecipeHandler(c *gin.Context) {
+	id := c.Param("id")
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+	searchArg := bson.M{"_id": objectId}
+	result := collection.FindOne(ctx, searchArg)
+
+	var recipe Recipe
+	err = result.Decode(&recipe)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while parsing fetched recipe" + err.Error()})
 		return
 	}
 
-	recipes = append(recipes[:index], recipes[index+1:]...)
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Recipe has been deleted",
-	})
+	c.JSON(http.StatusOK, recipe)
 }
 
-func SearchRecipesHandler(c *gin.Context) {
+func SearchRecipesByTagHandler(c *gin.Context) {
 	tag := c.Query("tag")
-	recipeListSearch := make([]Recipe, 0)
-
-	for i := 0; i < len(recipes); i++ {
-		found := false
-		for _, recipeTag := range recipes[i].Tags {
-			if strings.EqualFold(recipeTag, tag) {
-				found = true
-			}
-		}
-
-		if found {
-			recipeListSearch = append(recipeListSearch, recipes[i])
-		}
+	cursor, err := collection.Find(ctx, bson.M{"tags": tag})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while searching for recipe to delete " + err.Error()})
+		return
 	}
+	defer cursor.Close(ctx)
 
-	c.JSON(http.StatusOK, recipeListSearch)
+	var listOfRecipes []Recipe
+	err = cursor.All(ctx, &listOfRecipes)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while parsing query results: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, listOfRecipes)
 }
 
 func loadRecipesIntoDb() {
@@ -190,7 +195,8 @@ func main() {
 	engine := gin.Default()
 	engine.POST("/recipes", CreateNewRecipeHandler)
 	engine.GET("/recipes", FetchAllRecipesHandler)
-	engine.GET("/recipes/search", SearchRecipesHandler)
+	engine.GET("recipes/:id", FetchOneRecipeHandler)
+	engine.GET("/recipes/search", SearchRecipesByTagHandler)
 	engine.PUT("/recipes/:id", UpdateRecipeHandler)
 	engine.DELETE("/recipes/:id", DeleteRecipeHandler)
 	engine.Run()
