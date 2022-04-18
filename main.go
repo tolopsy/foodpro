@@ -1,33 +1,29 @@
 package main
 
 import (
-	"context"
 	"log"
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"github.com/joho/godotenv"
 
-	"github.com/tolopsy/foodpro/handlers"
+	"github.com/tolopsy/foodpro/provider"
+	"github.com/tolopsy/foodpro/server"
 )
 
-var err error
-var ctx context.Context
-var client *mongo.Client
-var collection *mongo.Collection
-var recipeHandler *handlers.RecipeHandler
+var recipeHandler *server.RecipeHandler
 
 func init() {
-	ctx = context.Background()
-	client, err = mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
-	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal("Error while pinging DB: " + err.Error())
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error while loading dev environment variables: " + err.Error())
 	}
-	log.Println("Connected to MongoDB")
-	collection = client.Database(os.Getenv("MONGO_DATABASE")).Collection("recipes")
-	recipeHandler = handlers.NewRecipeHandler(collection, ctx)
+
+	dbType, dbURI, dbName := os.Getenv("DB_TYPE"), os.Getenv("DB_URI"), os.Getenv("DB_NAME")
+	db, err := provider.NewDBHandler(dbType, dbURI, dbName)
+	if err != nil {
+		log.Fatal("Error while obtaining db handler: " + err.Error())
+	}
+	recipeHandler = server.NewRecipeHandler(db)
 }
 
 func main() {
