@@ -2,7 +2,7 @@ package provider
 
 import (
 	"github.com/tolopsy/foodpro/persistence"
-	"github.com/tolopsy/foodpro/persistence/mongolayer"
+	"github.com/tolopsy/foodpro/persistence/db/mongolayer"
 )
 
 type DBTYPE string
