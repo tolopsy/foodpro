@@ -1,29 +1,46 @@
 package server
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"github.com/tolopsy/foodpro/persistence"
+	"github.com/tolopsy/foodpro/persistence/cache"
 )
 
 type RecipeHandler struct {
-	db persistence.DatabaseHandler
+	db    persistence.DatabaseHandler
+	cache persistence.CacheHandler
 }
 
-func NewRecipeHandler(dbHandler persistence.DatabaseHandler) *RecipeHandler {
+func NewRecipeHandler(db persistence.DatabaseHandler, cache persistence.CacheHandler) *RecipeHandler {
 	return &RecipeHandler{
-		db: dbHandler,
+		db: db,
+		cache: cache,
 	}
 }
 
 func (handler *RecipeHandler) FetchAllRecipes(ctx *gin.Context) {
-	recipes, err := handler.db.FetchAllRecipes()
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	fetchFromDB:= false
+	recipes, err := handler.cache.GetRecipes()
+	if err == cache.ErrorKeyDoesNotExist {
+		fetchFromDB = true
+	} else if err != nil {
+		log.Println("Error while fetching recipes from cache -> " + err.Error())
+		fetchFromDB = true
 	}
+
+	if fetchFromDB {
+		recipes, err = handler.db.FetchAllRecipes()
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		handler.cache.SetRecipes(recipes)
+	}
+
 	ctx.JSON(http.StatusOK, recipes)
 }
 
@@ -58,6 +75,7 @@ func (handler *RecipeHandler) CreateNewRecipe(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	handler.cache.ClearRecipes()
 	ctx.JSON(http.StatusOK, recipe)
 }
 
@@ -74,6 +92,7 @@ func (handler *RecipeHandler) UpdateRecipe(ctx *gin.Context) {
 		return
 	}
 
+	handler.cache.ClearRecipes()
 	ctx.JSON(http.StatusOK, gin.H{"message": "Recipe has been updated"})
 }
 
@@ -83,5 +102,7 @@ func (handler *RecipeHandler) DeleteRecipe(ctx *gin.Context) {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	handler.cache.ClearRecipes()
 	ctx.JSON(http.StatusNoContent, gin.H{"message": "Recipe has been deleted"})
 }
