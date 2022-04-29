@@ -1,4 +1,4 @@
-package redislayer
+package redisclient
 
 import (
 	"encoding/json"
