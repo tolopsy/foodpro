@@ -19,11 +19,18 @@ func init() {
 	}
 
 	dbType, dbURI, dbName := os.Getenv("DB_TYPE"), os.Getenv("DB_URI"), os.Getenv("DB_NAME")
+	cacheType, cacheHost, cachePassword := os.Getenv("CACHE_TYPE"), os.Getenv("CACHE_HOST"), os.Getenv("CACHE_PASSWORD")
+
 	db, err := provider.NewDBHandler(dbType, dbURI, dbName)
 	if err != nil {
-		log.Fatal("Error while obtaining db handler: " + err.Error())
+		log.Fatal("Error while obtaining db handler -> " + err.Error())
 	}
-	recipeHandler = server.NewRecipeHandler(db)
+
+	cache, err := provider.NewCacheHandler(cacheType, cacheHost, cachePassword)
+	if err != nil {
+		log.Fatal("Error while obtainiing cache server -> " + err.Error())
+	}
+	recipeHandler = server.NewRecipeHandler(db, cache)
 }
 
 func main() {
