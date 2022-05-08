@@ -9,9 +9,11 @@ import (
 
 	"github.com/tolopsy/foodpro/provider"
 	"github.com/tolopsy/foodpro/server"
+	auth "github.com/tolopsy/foodpro/server/middleware/authentication"
 )
 
 var recipeHandler *server.RecipeHandler
+var authMiddleware auth.AuthMiddleware
 
 func init() {
 	if err := godotenv.Load(); err != nil {
@@ -31,6 +33,7 @@ func init() {
 		log.Fatal("Error while obtainiing cache server -> " + err.Error())
 	}
 	recipeHandler = server.NewRecipeHandler(db, cache)
+	authMiddleware = auth.NewAPIKeyAuth(os.Getenv("X-API-KEY"))
 }
 
 func main() {
@@ -38,9 +41,13 @@ func main() {
 	engine.GET("/recipes", recipeHandler.FetchAllRecipes)
 	engine.GET("recipes/:id", recipeHandler.FetchOneRecipe)
 	engine.GET("/recipes/search", recipeHandler.SearchRecipesByTag)
-	engine.POST("/recipes", recipeHandler.CreateNewRecipe)
-	engine.PATCH("/recipes/:id", recipeHandler.UpdateRecipe)
-	engine.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
+
+	authorized := engine.Group("/")
+	authorized.Use(authMiddleware.Authenticate())
+	authorized.POST("/recipes", recipeHandler.CreateNewRecipe)
+	authorized.PATCH("/recipes/:id", recipeHandler.UpdateRecipe)
+	authorized.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
+
 	engine.Run()
 }
 
