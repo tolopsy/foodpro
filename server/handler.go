@@ -17,13 +17,13 @@ type RecipeHandler struct {
 
 func NewRecipeHandler(db persistence.DatabaseHandler, cache persistence.CacheHandler) *RecipeHandler {
 	return &RecipeHandler{
-		db: db,
+		db:    db,
 		cache: cache,
 	}
 }
 
 func (handler *RecipeHandler) FetchAllRecipes(ctx *gin.Context) {
-	fetchFromDB:= false
+	fetchFromDB := false
 	recipes, err := handler.cache.GetRecipes()
 	if err == cache.ErrorKeyDoesNotExist {
 		fetchFromDB = true
