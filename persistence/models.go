@@ -12,3 +12,20 @@ type Recipe struct {
 	Instructions []string    `json:"instructions,omitempty" bson:"instructions,omitempty"`
 	PublishedAt  time.Time   `json:"publishedAt,omitempty" bson:"publishedAt,omitempty"`
 }
+
+type User struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func (user *User) VerifyUser() bool {
+	// acceptedUsername & acceptedPassword are just stubs and not 
+	// typical to a proper verification process
+	acceptedUsername := "admin"
+	acceptedPassword := "password"
+
+	if user.Username != acceptedUsername || user.Password != acceptedPassword {
+		return false
+	}
+	return true
+}
