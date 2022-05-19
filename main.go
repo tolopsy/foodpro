@@ -10,6 +10,7 @@ import (
 	"github.com/tolopsy/foodpro/provider"
 	"github.com/tolopsy/foodpro/server"
 	auth "github.com/tolopsy/foodpro/server/middleware/authentication"
+	jwt_auth "github.com/tolopsy/foodpro/server/middleware/authentication/jwt"
 )
 
 var recipeHandler *server.RecipeHandler
@@ -33,7 +34,7 @@ func init() {
 		log.Fatal("Error while obtainiing cache server -> " + err.Error())
 	}
 	recipeHandler = server.NewRecipeHandler(db, cache)
-	authMiddleware = auth.NewAPIKeyAuth(os.Getenv("X-API-KEY"))
+	authMiddleware = jwt_auth.NewJWTAuth(os.Getenv("JWT_SECRET"))
 }
 
 func main() {
@@ -41,6 +42,7 @@ func main() {
 	engine.GET("/recipes", recipeHandler.FetchAllRecipes)
 	engine.GET("recipes/:id", recipeHandler.FetchOneRecipe)
 	engine.GET("/recipes/search", recipeHandler.SearchRecipesByTag)
+	engine.POST("/sign-in", authMiddleware.SignIn)
 
 	authorized := engine.Group("/")
 	authorized.Use(authMiddleware.Authenticate())
