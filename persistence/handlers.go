@@ -7,6 +7,7 @@ type DatabaseHandler interface {
 	AddRecipe(*Recipe) error
 	UpdateRecipe(string, Recipe) error
 	DeleteRecipe(string) error
+	VerifyUser(User) bool
 }
 
 type CacheHandler interface {
