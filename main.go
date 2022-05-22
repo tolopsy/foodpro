@@ -13,7 +13,7 @@ import (
 	jwt_auth "github.com/tolopsy/foodpro/server/middleware/authentication/jwt"
 )
 
-var recipeHandler *server.RecipeHandler
+var handler *server.Handler
 var authMiddleware auth.AuthMiddleware
 
 func init() {
@@ -33,24 +33,24 @@ func init() {
 	if err != nil {
 		log.Fatal("Error while obtainiing cache server -> " + err.Error())
 	}
-	recipeHandler = server.NewRecipeHandler(db, cache)
-	authMiddleware = jwt_auth.NewJWTAuth(os.Getenv("JWT_SECRET"))
+	handler = server.NewHandler(db, cache)
+	authMiddleware = jwt_auth.NewJWTAuth(os.Getenv("JWT_SECRET"), db.VerifyUser)
 }
 
 func main() {
 	engine := gin.Default()
-	engine.GET("/recipes", recipeHandler.FetchAllRecipes)
-	engine.GET("recipes/:id", recipeHandler.FetchOneRecipe)
-	engine.GET("/recipes/search", recipeHandler.SearchRecipesByTag)
+	engine.GET("/recipes", handler.FetchAllRecipes)
+	engine.GET("recipes/:id", handler.FetchOneRecipe)
+	engine.GET("/recipes/search", handler.SearchRecipesByTag)
 	engine.POST("/sign-in", authMiddleware.SignIn)
 
 	auth.LoadSpecialHandlers(authMiddleware, engine)
 
 	authorized := engine.Group("/")
 	authorized.Use(authMiddleware.Authenticate())
-	authorized.POST("/recipes", recipeHandler.CreateNewRecipe)
-	authorized.PATCH("/recipes/:id", recipeHandler.UpdateRecipe)
-	authorized.DELETE("/recipes/:id", recipeHandler.DeleteRecipe)
+	authorized.POST("/recipes", handler.CreateNewRecipe)
+	authorized.PATCH("/recipes/:id", handler.UpdateRecipe)
+	authorized.DELETE("/recipes/:id", handler.DeleteRecipe)
 
 	engine.Run()
 }
