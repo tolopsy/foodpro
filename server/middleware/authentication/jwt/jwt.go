@@ -10,13 +10,18 @@ import (
 )
 
 type JWTAuth struct {
-	jwtSecret string
-	headerKey string
+	jwtSecret  string
+	headerKey  string
+	verifyUser func(persistence.User) bool
 }
 
-func NewJWTAuth(secret string) *JWTAuth {
+func NewJWTAuth(secret string, verifyUser func(persistence.User) bool) *JWTAuth {
 	headerKey := "Authorization"
-	return &JWTAuth{jwtSecret: secret, headerKey: headerKey}
+	return &JWTAuth{
+		jwtSecret:  secret,
+		headerKey:  headerKey,
+		verifyUser: verifyUser,
+	}
 }
 
 type Claims struct {
@@ -36,7 +41,7 @@ func (jwtAuth *JWTAuth) SignIn(ctx *gin.Context) {
 		return
 	}
 
-	if !user.VerifyUser() {
+	if !jwtAuth.verifyUser(user) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Username or Password"})
 		return
 	}
@@ -52,19 +57,19 @@ func (jwtAuth *JWTAuth) SignIn(ctx *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(jwtAuth.jwtSecret))
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, "Error while signing jwt token -> " + err.Error())
+		ctx.JSON(http.StatusInternalServerError, "Error while signing jwt token -> "+err.Error())
 		return
 	}
 
 	jwtOutput := JWTOutput{
-		Token: tokenString,
+		Token:   tokenString,
 		Expires: expiresAt,
 	}
 
 	ctx.JSON(http.StatusOK, jwtOutput)
 }
 
-func(jwtAuth *JWTAuth) Authenticate() gin.HandlerFunc {
+func (jwtAuth *JWTAuth) Authenticate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		tokenValue := ctx.GetHeader(jwtAuth.headerKey)
 		claims := &Claims{}
@@ -72,14 +77,14 @@ func(jwtAuth *JWTAuth) Authenticate() gin.HandlerFunc {
 			return []byte(jwtAuth.jwtSecret), nil
 		}
 		token, err := jwt.ParseWithClaims(tokenValue, claims, getTokenSecret)
-		
+
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Error while parsing token ->" + err.Error()})
 			ctx.Abort()
 			return
 		}
 
-		if (token == nil || !token.Valid) {
+		if token == nil || !token.Valid {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			ctx.Abort()
 			return
