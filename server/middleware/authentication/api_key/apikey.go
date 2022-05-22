@@ -8,13 +8,18 @@ import (
 )
 
 type APIKeyAuth struct {
-	apiKey string
+	apiKey    string
 	headerKey string
+	verifyUser func(persistence.User) bool
 }
 
-func NewAPIKeyAuth(key string) *APIKeyAuth {
+func NewAPIKeyAuth(key string, verifyUser func(persistence.User) bool) *APIKeyAuth {
 	headerKey := "X-API-KEY"
-	return &APIKeyAuth{apiKey: key, headerKey: headerKey}
+	return &APIKeyAuth{
+		apiKey:    key,
+		headerKey: headerKey,
+		verifyUser: verifyUser,
+	}
 }
 
 func (auth *APIKeyAuth) Authenticate() gin.HandlerFunc {
@@ -35,7 +40,7 @@ func (auth *APIKeyAuth) SignIn(ctx *gin.Context) {
 		return
 	}
 
-	if !user.VerifyUser() {
+	if !auth.verifyUser(user) {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Username or Password"})
 		return
 	}
