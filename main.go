@@ -44,6 +44,8 @@ func main() {
 	engine.GET("/recipes/search", recipeHandler.SearchRecipesByTag)
 	engine.POST("/sign-in", authMiddleware.SignIn)
 
+	auth.LoadSpecialHandlers(authMiddleware, engine)
+
 	authorized := engine.Group("/")
 	authorized.Use(authMiddleware.Authenticate())
 	authorized.POST("/recipes", recipeHandler.CreateNewRecipe)
