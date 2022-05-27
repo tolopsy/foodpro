@@ -7,6 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
+// Basic verification as the hashing and salting herein is
+// only to demo implementation
 func (db *DBHandler) VerifyUser(user persistence.User) bool {
 	h := sha256.New()
 
