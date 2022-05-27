@@ -15,3 +15,5 @@ type CacheHandler interface {
 	GetRecipes() ([]Recipe, error)
 	ClearRecipes() error
 }
+
+type UserVerifier func(User) bool
