@@ -10,10 +10,10 @@ import (
 type APIKeyAuth struct {
 	apiKey    string
 	headerKey string
-	verifyUser func(persistence.User) bool
+	verifyUser persistence.UserVerifier
 }
 
-func NewAPIKeyAuth(key string, verifyUser func(persistence.User) bool) *APIKeyAuth {
+func NewAPIKeyAuth(key string, verifyUser persistence.UserVerifier) *APIKeyAuth {
 	headerKey := "X-API-KEY"
 	return &APIKeyAuth{
 		apiKey:    key,
@@ -46,3 +46,5 @@ func (auth *APIKeyAuth) SignIn(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{auth.headerKey: auth.apiKey})
 }
+
+func (auth *APIKeyAuth) SignOut(ctx *gin.Context) {}
