@@ -13,10 +13,8 @@ import (
 func (jwtAuth *JWTAuth) Refresh(ctx *gin.Context) {
 	tokenValue := ctx.GetHeader(jwtAuth.headerKey)
 	claims := &Claims{}
-	getTokenSecret := func(token *jwt.Token) (interface{}, error) {
-		return []byte(jwtAuth.jwtSecret), nil
-	}
-	token, err := jwt.ParseWithClaims(tokenValue, claims, getTokenSecret)
+	token, err := jwt.ParseWithClaims(tokenValue, claims, jwtAuth.getTokenSecret)
+	
 	if err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Error while parsing token string -> " + err.Error()})
 		return
