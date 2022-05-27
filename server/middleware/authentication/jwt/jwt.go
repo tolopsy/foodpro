@@ -12,10 +12,14 @@ import (
 type JWTAuth struct {
 	jwtSecret  string
 	headerKey  string
-	verifyUser func(persistence.User) bool
+	verifyUser persistence.UserVerifier
 }
 
-func NewJWTAuth(secret string, verifyUser func(persistence.User) bool) *JWTAuth {
+func (jwtAuth *JWTAuth) getTokenSecret(token *jwt.Token) (interface{}, error) {
+	return []byte(jwtAuth.jwtSecret), nil
+}
+
+func NewJWTAuth(secret string, verifyUser persistence.UserVerifier) *JWTAuth {
 	headerKey := "Authorization"
 	return &JWTAuth{
 		jwtSecret:  secret,
@@ -73,10 +77,7 @@ func (jwtAuth *JWTAuth) Authenticate() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		tokenValue := ctx.GetHeader(jwtAuth.headerKey)
 		claims := &Claims{}
-		getTokenSecret := func(token *jwt.Token) (interface{}, error) {
-			return []byte(jwtAuth.jwtSecret), nil
-		}
-		token, err := jwt.ParseWithClaims(tokenValue, claims, getTokenSecret)
+		token, err := jwt.ParseWithClaims(tokenValue, claims, jwtAuth.getTokenSecret)
 
 		if err != nil {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Error while parsing token ->" + err.Error()})
@@ -93,3 +94,6 @@ func (jwtAuth *JWTAuth) Authenticate() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+// since I'm not yet persisting tokens on the server, I'll leave this as dummy.
+func (jwtAuth *JWTAuth) SignOut(ctx *gin.Context) {}
