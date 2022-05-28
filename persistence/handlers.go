@@ -7,6 +7,7 @@ type DatabaseHandler interface {
 	AddRecipe(*Recipe) error
 	UpdateRecipe(string, Recipe) error
 	DeleteRecipe(string) error
+	VerifyUser(User) bool
 }
 
 type CacheHandler interface {
@@ -14,3 +15,5 @@ type CacheHandler interface {
 	GetRecipes() ([]Recipe, error)
 	ClearRecipes() error
 }
+
+type UserVerifier func(User) bool
