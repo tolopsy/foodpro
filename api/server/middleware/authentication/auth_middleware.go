@@ -3,8 +3,8 @@ package auth
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	jwt_auth "github.com/tolopsy/foodpro/server/middleware/authentication/jwt"
-	session_auth "github.com/tolopsy/foodpro/server/middleware/authentication/session"
+	jwt_auth "github.com/tolopsy/foodpro/api/server/middleware/authentication/jwt"
+	session_auth "github.com/tolopsy/foodpro/api/server/middleware/authentication/session"
 )
 
 type AuthMiddleware interface {

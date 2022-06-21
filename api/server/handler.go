@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/tolopsy/foodpro/persistence"
-	"github.com/tolopsy/foodpro/persistence/cache"
+	"github.com/tolopsy/foodpro/api/persistence"
+	"github.com/tolopsy/foodpro/api/persistence/cache"
 )
 
 type Handler struct {

@@ -1,4 +1,4 @@
-module github.com/tolopsy/foodpro
+module github.com/tolopsy/foodpro/api
 
 go 1.17
 

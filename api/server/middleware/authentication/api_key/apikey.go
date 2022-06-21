@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tolopsy/foodpro/persistence"
+	"github.com/tolopsy/foodpro/api/persistence"
 )
 
 type APIKeyAuth struct {

@@ -3,7 +3,7 @@ package mongolayer
 import (
 	"crypto/sha256"
 
-	"github.com/tolopsy/foodpro/persistence"
+	"github.com/tolopsy/foodpro/api/persistence"
 	"go.mongodb.org/mongo-driver/bson"
 )
 

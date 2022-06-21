@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
-	"github.com/tolopsy/foodpro/provider"
-	"github.com/tolopsy/foodpro/server"
-	auth "github.com/tolopsy/foodpro/server/middleware/authentication"
-	session_auth "github.com/tolopsy/foodpro/server/middleware/authentication/session"
+	"github.com/tolopsy/foodpro/api/provider"
+	"github.com/tolopsy/foodpro/api/server"
+	auth "github.com/tolopsy/foodpro/api/server/middleware/authentication"
+	session_auth "github.com/tolopsy/foodpro/api/server/middleware/authentication/session"
 )
 
 var handler *server.Handler
@@ -71,7 +71,7 @@ func main() {
 	authorized.PATCH("/recipes/:id", handler.UpdateRecipe)
 	authorized.DELETE("/recipes/:id", handler.DeleteRecipe)
 
-	engine.Run()
+	engine.Run(":8080")
 }
 
 

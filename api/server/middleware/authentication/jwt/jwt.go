@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/tolopsy/foodpro/persistence"
+	"github.com/tolopsy/foodpro/api/persistence"
 )
 
 type JWTAuth struct {

@@ -1,9 +1,9 @@
 package provider
 
 import (
-	"github.com/tolopsy/foodpro/persistence"
-	"github.com/tolopsy/foodpro/persistence/cache"
-	"github.com/tolopsy/foodpro/persistence/cache/redisclient"
+	"github.com/tolopsy/foodpro/api/persistence"
+	"github.com/tolopsy/foodpro/api/persistence/cache"
+	"github.com/tolopsy/foodpro/api/persistence/cache/redisclient"
 )
 
 type CACHE_SERVER string

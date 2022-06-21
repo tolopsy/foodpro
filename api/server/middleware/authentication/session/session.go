@@ -7,7 +7,7 @@ import (
 	redisSessions "github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
-	"github.com/tolopsy/foodpro/persistence"
+	"github.com/tolopsy/foodpro/api/persistence"
 )
 
 type SessionAuth struct {

@@ -3,7 +3,7 @@ package mongolayer
 import (
 	"time"
 
-	"github.com/tolopsy/foodpro/persistence"
+	"github.com/tolopsy/foodpro/api/persistence"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/bson"
 )

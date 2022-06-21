@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	"github.com/go-redis/redis"
-	"github.com/tolopsy/foodpro/persistence"
-	"github.com/tolopsy/foodpro/persistence/cache"
+	"github.com/tolopsy/foodpro/api/persistence"
+	"github.com/tolopsy/foodpro/api/persistence/cache"
 )
 
 type CacheHandler struct {
