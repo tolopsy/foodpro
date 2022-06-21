@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/tolopsy/foodpro/persistence"
 )
 
@@ -30,7 +30,7 @@ func NewJWTAuth(secret string, verifyUser persistence.UserVerifier) *JWTAuth {
 
 type Claims struct {
 	Username string `json:"username"`
-	jwt.StandardClaims
+	jwt.RegisteredClaims
 }
 
 type JWTOutput struct {
@@ -53,8 +53,8 @@ func (jwtAuth *JWTAuth) SignIn(ctx *gin.Context) {
 	expiresAt := time.Now().Add(10 * time.Minute)
 	claims := &Claims{
 		Username: user.Username,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expiresAt.Unix(),
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 		},
 	}
 
@@ -95,5 +95,5 @@ func (jwtAuth *JWTAuth) Authenticate() gin.HandlerFunc {
 	}
 }
 
-// since I'm not yet persisting tokens on the server, I'll leave this as dummy.
+// since I'm not persisting tokens on the server (yet), I'll leave this as dummy.
 func (jwtAuth *JWTAuth) SignOut(ctx *gin.Context) {}

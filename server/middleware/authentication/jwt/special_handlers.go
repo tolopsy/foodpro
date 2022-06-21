@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,14 +26,14 @@ func (jwtAuth *JWTAuth) Refresh(ctx *gin.Context) {
 	}
 
 	expireBoundary := 30 * time.Second
-	expiryTime := time.Unix(claims.ExpiresAt, 0)
+	expiryTime := claims.ExpiresAt.Time
 	if time.Until(expiryTime) > expireBoundary {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Token has not expired"})
 		return
 	}
 
 	expiryTime = time.Now().Add(5 * time.Second)
-	claims.ExpiresAt = expiryTime.Unix()
+	claims.ExpiresAt = jwt.NewNumericDate(expiryTime)
 	token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenValue, err = token.SignedString(jwtAuth.jwtSecret)
 	if err != nil {

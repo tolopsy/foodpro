@@ -3,9 +3,9 @@ module github.com/tolopsy/foodpro
 go 1.17
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis v6.15.9+incompatible
+	github.com/golang-jwt/jwt/v4 v4.4.1
 	github.com/joho/godotenv v1.4.0
 	github.com/rs/xid v1.4.0
 	go.mongodb.org/mongo-driver v1.9.0
