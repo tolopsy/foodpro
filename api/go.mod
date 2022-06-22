@@ -3,6 +3,7 @@ module github.com/tolopsy/foodpro/api
 go 1.17
 
 require (
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/golang-jwt/jwt/v4 v4.4.1

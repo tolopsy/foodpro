@@ -3,18 +3,22 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
 	"github.com/tolopsy/foodpro/api/provider"
 	"github.com/tolopsy/foodpro/api/server"
 	auth "github.com/tolopsy/foodpro/api/server/middleware/authentication"
+	cors_middleware "github.com/tolopsy/foodpro/api/server/middleware/cors"
 	session_auth "github.com/tolopsy/foodpro/api/server/middleware/authentication/session"
 )
 
 var handler *server.Handler
 var authMiddleware auth.AuthMiddleware
+var corsRule cors.Config
 
 func init() {
 	if err := godotenv.Load(); err != nil {
@@ -52,11 +56,21 @@ func init() {
 	if err != nil {
 		log.Fatal("Error while initializing authentication middleware -> " + err.Error())
 	}
+
+	// cors rule
+	corsRule = cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowMethods:     []string{"GET", "OPTIONS"},
+		AllowHeaders:     []string{"Origin"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}
 }
 
 func main() {
 	engine := gin.Default()
-
+	engine.Use(cors_middleware.NewCorsMiddleware(corsRule))
 	auth.LoadSpecialFeatures(authMiddleware, engine)
 
 	engine.GET("/recipes", handler.FetchAllRecipes)
@@ -74,55 +88,3 @@ func main() {
 	engine.Run(":8080")
 }
 
-
-
-/*
-func loadUsersIntoDb() {
-	users := map[string]string{
-		"admin":   "password",
-		"guest":   "guest",
-		"tolopsy": "foodpro",
-	}
-
-	ctx := context.Background()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("DB_URI")))
-	if err != nil {
-		log.Fatal("kILELEYI", err.Error())
-	}
-	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal("kITUNLELEYI", err.Error())
-	}
-
-	userCollection := client.Database(os.Getenv("DB_NAME")).Collection("users")
-
-	// basic hashing & salting
-	h := sha256.New()
-	for username, password := range users {
-		userCollection.InsertOne(ctx, bson.M{
-			"username": username,
-			"password": string(h.Sum([]byte(password))),
-		})
-	}
-}
-
-
-func loadRecipesIntoDb() {
-	recipes = make([]Recipe, 0)
-	file, _ := ioutil.ReadFile("recipes.json")
-	err = json.Unmarshal(file, &recipes)
-	if err != nil {
-		log.Fatal("Error while loading recipes data: " + err.Error())
-	}
-
-	var listOfRecipes []interface{}
-	for _, recipe := range recipes {
-		listOfRecipes = append(listOfRecipes, recipe)
-	}
-
-	insertManyResult, err := collection.InsertMany(ctx, listOfRecipes)
-	if err != nil {
-		log.Fatal("Error while inserting initial recipes data " + err.Error())
-	}
-	log.Println("Inserted recipes: ", len(insertManyResult.InsertedIDs))
-}
-*/
